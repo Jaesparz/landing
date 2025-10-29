@@ -1,25 +1,26 @@
 "use strict";
 
-import { fetchProducts } from "./functions";
+import { fetchProducts, fetchCategories } from "./functions";
 
 
 let renderProducts = () => {
 
 
-    fetchProducts("https://data-dawm.github.io/datum/reseller/products.json").then(result => {
-        if (result.success == true) {
+    fetchProducts("https://data-dawm.github.io/datum/reseller/products.json")
+        .then(result => {
+            if (result.success == true) {
 
-            let container = document.getElementById("products-container");
-            container.innerHTML = "";
+                let container = document.getElementById("products-container");
+                container.innerHTML = "";
 
-            let products = result.body.slice(0, 6);
+                let products = result.body.slice(0, 6);
 
-            products.forEach(product => {
-
-
+                products.forEach(product => {
 
 
-                let productHTML = `
+
+
+                    let productHTML = `
    <div class="space-y-4 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow">
        <img
            class="w-full h-40 bg-gray-300 dark:bg-gray-700 rounded-lg object-cover transition-transform duration-300 hover:scale-[1.03]"
@@ -40,24 +41,25 @@ let renderProducts = () => {
        </div>
    </div>`;
 
-                productHTML = productHTML.replaceAll("[PRODUCT.TITLE]", product.title.length > 20 ? product.title.substring(0, 20) + "..." : product.title);
+                    productHTML = productHTML.replaceAll("[PRODUCT.TITLE]", product.title.length > 20 ? product.title.substring(0, 20) + "..." : product.title);
 
-                productHTML = productHTML.replaceAll('[PRODUCT.CATEGORY_ID]', product.category_id);
+                    productHTML = productHTML.replaceAll('[PRODUCT.CATEGORY_ID]', product.category_id);
 
-                productHTML = productHTML.replaceAll('[PRODUCT.PRICE]', product.price);
+                    productHTML = productHTML.replaceAll('[PRODUCT.PRICE]', product.price);
 
-                productHTML = productHTML.replaceAll('[PRODUCT.IMGURL]', product.imgUrl);
+                    productHTML = productHTML.replaceAll('[PRODUCT.IMGURL]', product.imgUrl);
 
 
 
-                container.innerHTML += productHTML;
+                    container.innerHTML += productHTML;
 
-            });
+                });
 
-        }
+            }
+            throw new Error(result.success);
 
-    })
-       .catch(error => {
+        })
+        .catch(error => {
             return {
                 success: false,
                 body: error.message
@@ -65,6 +67,41 @@ let renderProducts = () => {
 
         });
 };
+
+
+
+let renderCategories = async () => {
+
+    try {
+        let result = await fetchCategories('https://data-dawm.github.io/datum/reseller/categories.xml');
+        if (result.success == true) {
+            let container = document.getElementById("categories");
+            container.innerHTML = `<option selected disabled>Seleccione una categoría</option>`;
+
+            let categoriesXML = result.body;
+            let categories = categoriesXML.getElementsByTagName("category");
+
+            for (let category of categories) {
+
+                let categoryHTML = `<option value="[ID]">[NAME]</option>`;
+                let id = category.getElementsByTagName("id")[0].textContent;
+                let name = category.getElementsByTagName("name")[0].textContent;
+
+                categoryHTML = categoryHTML.replace("[ID]", id);
+                categoryHTML = categoryHTML.replace("[NAME]", name);
+
+                container.innerHTML += categoryHTML;
+
+            };
+        }
+    }
+    catch (error) {
+        return {
+            success: false,
+            body: error.message
+        };
+    }
+}
 
 
 
@@ -104,4 +141,5 @@ const showVideo = () => {
     showToast();
     showVideo();
     renderProducts();
+    renderCategories();
 })();
