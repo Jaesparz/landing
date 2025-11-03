@@ -1,6 +1,76 @@
 "use strict";
 
 import { fetchProducts, fetchCategories } from "./functions";
+import { saveVotes, getVotes } from "./firebase";
+
+let enableForm = () =>{
+    const form = document.getElementById("form_voting");
+    if(form){
+        form.addEventListener("submit",(event) => {
+            event.preventDefault();
+
+            const productId = document.getElementById("select_product").value;
+
+            saveVotes(productId).then(response => {
+                if (response.status){
+                    alert(response.message);
+                    displayVotes();
+                }
+                else{
+                    alert(response.message);
+                }
+            });
+        });
+    }
+};
+
+let displayVotes = async () => {
+  const container = document.getElementById('results');
+  if (!container) return;
+
+  container.innerHTML = 'Cargando...';
+
+  const { status, data, message } = await getVotes();
+  if (!status) {
+    container.innerHTML = message || 'Sin datos.';
+    return;
+  }
+
+
+  const counts = {};
+  for (const key in data) {
+    const vote = data[key];
+    const pid = vote?.productId ?? vote?.productID ?? 'Desconocido';
+
+    counts[pid] = (counts[pid] || 0) + 1;
+  }
+
+
+  if (Object.keys(counts).length === 0) {
+    container.innerHTML = 'Sin datos.';
+    return;
+  }
+
+ 
+  let rows = '';
+  for (const prod in counts) {
+    rows += `<tr><td>${prod}</td><td>${counts[prod]}</td></tr>`;
+  }
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Total de votos</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
+  `;
+};
 
 
 let renderProducts = () => {
@@ -142,4 +212,6 @@ const showVideo = () => {
     showVideo();
     renderProducts();
     renderCategories();
+    enableForm();
+    displayVotes();
 })();
